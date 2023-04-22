@@ -1,80 +1,72 @@
-const uuid = require('uuid')
-
 const Users = require('../models/users.models')
+const uuid = require('uuid')
 const { hashPassword } = require('../utils/crypto')
 
 const findAllUsers = async () => {
-    const data = await Users.findAll({
-        attributes: {
-            exclude: ['password', 'createdAt', 'updatedAt']
-        },
-        where: {
-            status: 'active'
-        }
-    })
-    return data
+  const users = await Users.findAll()
+  return users
 }
 
 const findUserById = async (id) => {
-    const data = await Users.findOne({
-        attributes: {
-            exclude: ['password', 'createdAt', 'updatedAt']
-        },
-        where: {
-            id: id
-        }
-    })
-    return data
+  const data = await Users.findOne({
+      where: {
+          id: id,
+      }
+  })
+  return data
 }
 
 const findUserByEmail = async (email) => {
-    const data = await Users.findOne({
-        where: {
-            email: email
-        }
-    })
-    return data
+  const data = await Users.findOne({
+      where: {
+          email : email
+      }
+  })
+  return data
 }
 
-const createUser = async (obj) => {
-    const data = await Users.create({
-        id: uuid.v4(),
-        firstName: obj.firstName,
-        lastName: obj.lastName,
-        email: obj.email,
-        password: hashPassword(obj.password),
-        gender: obj.gender,
-        birthday: obj.birthday
-    })
-    return data
+const createUser = async(userObject) => {
+  const newUser = {
+    id: uuid.v4(),
+    firstName: userObject.firstName,
+    lastName: userObject.lastName,
+    email: userObject.email,
+    password: hashPassword(userObject.password),
+    birthday: userObject.birthday,
+    phone: userObject.phone
+  }
+  const data = await Users.create(newUser)
+  return data
 }
 
-const updateUser = async (id, obj) => {
-    const data = await Users.update(obj, {
-        where: {
-            id: id
-        }
-    })
-    return data[0]
+const updateUser = async(id, userObj) => {
+
+  const selectedUser = await Users.findOne({
+      where: {
+          id: id
+      }
+  })
+  
+  if(!selectedUser) return null
+
+  const modifiedUser = await selectedUser.update(userObj)
+  return modifiedUser
 }
 
-const deleteUser = async (id) => {
-    const data = await Users.update({
-        status: 'inactive'
-    }, {
-        where: {
-            id: id
-        }
-    })
-    return data[0]
+const deleteUser = async(id) => {
+  const user = await Users.destroy({
+      where: {
+          id: id
+      }
+  })
+  return user // 1 || 0
 }
-
 
 module.exports = {
-    findAllUsers,
-    findUserById,
-    findUserByEmail,
-    createUser,
-    updateUser,
-    deleteUser
+  findAllUsers,
+  findUserById,
+  createUser,
+  updateUser,
+  deleteUser,
+  findUserByEmail
 }
