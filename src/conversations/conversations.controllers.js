@@ -1,41 +1,57 @@
 const uuid = require('uuid')
-
 const Conversations = require('../models/conversations.models')
-const Users = require('../models/users.models')
 const Participants = require('../models/participants.models')
+const Users = require('../models/users.models')
+
+const findAllConversations = async () => {
+  const conversations = await Conversations.findAll()
+  return conversations
+}
+
+const findConversationById = async (id) => {
+  const data = await Conversations.findOne({
+    where: {
+      id: id
+    }
+  })
+  return data
+}
 
 const createConversation = async (conversationObj) => {
-    const userGuest = await Users.findOne({
-        where: {
-            id: conversationObj.guestId
-        }
-    })
 
-    if(!userGuest) return false
+  //? Validacion por si el usuario invitado existe
+  const userGuest = await Users.findOne({where: {id: conversationObj.guestId}})
 
-    const newConversations = await Conversations.create({
-        id: uuid.v4(),
-        name: conversationObj.name,
-        profileImage: conversationObj.profileImage,
-        isGroup: conversationObj.isGroup
-    })
+  if(!userGuest){
+      return false
+  } 
 
-    await Participants.create({
-        id: uuid.v4(),
-        userId: conversationObj.ownerId,
-        conversationId: newConversations.id,
-        isAdmin: true
-    })
+  const newConversation = await Conversations.create({
+      id: uuid.v4(),
+      name: conversationObj.name,
+      profileImage: conversationObj.profileImage,
+      isGroup: conversationObj.isGroup
+  })
 
-    await Participants.create({
-        id: uuid.v4(),
-        userId: conversationObj.guestId,
-        conversationId: newConversations.id,
-        isAdmin: false
-    })
-    return newConversations
+  //? Owner participant
+  await Participants.create({
+      id: uuid.v4(),
+      userId: conversationObj.ownerId,
+      conversationId: newConversation.id,
+      isAdmin: true
+  })
+
+  //? Guest participant
+  await Participants.create({
+      id: uuid.v4(),
+      userId: conversationObj.guestId,
+      conversationId: newConversation.id,
+      isAdmin: false
+  })
+
+  return newConversation
 }
 
 module.exports = {
-    createConversation
+  createConversation
 }
